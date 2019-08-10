@@ -28,7 +28,7 @@ use xfailure::xbail;
 #[repr(C)]
 pub(crate) struct GpRegs {
     rbx: u64,
-    pub(crate) rsp: u64,
+    pub rsp: u64,
     rbp: u64,
     pub(crate) rdi: u64,
     r12: u64,
@@ -722,7 +722,7 @@ extern "C" {
     /// Performs the context switch; implemented in assembly.
     ///
     /// Never returns because the current context is discarded.
-    fn lucet_context_set(to: *const Context) -> !;
+    pub(crate) fn lucet_context_set(to: *const Context) -> !;
 
     /// Enables termination for the instance, after performing a context switch.
     ///
