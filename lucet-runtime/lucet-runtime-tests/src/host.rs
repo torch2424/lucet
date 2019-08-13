@@ -27,6 +27,8 @@ macro_rules! host_tests {
 
         lazy_static! {
             static ref HOSTCALL_MUTEX: Mutex<()> = Mutex::new(());
+            static ref NESTED_OUTER: Mutex<()> = Mutex::new(());
+            static ref NESTED_INNER: Mutex<()> = Mutex::new(());
         }
 
         #[lucet_hostcall]
@@ -227,6 +229,35 @@ macro_rules! host_tests {
             }
 
             assert!(HOSTCALL_MUTEX.is_poisoned());
+        }
+
+        /// Check that if two segments of hostcall stack are present when terminating, that they
+        /// both get properly unwound.
+        #[test]
+        fn nested_error_unwind() {
+            let module =
+                test_module_c("host", "nested_error_unwind.c").expect("build and load module");
+            let region = TestRegion::create(1, &Limits::default()).expect("region can be created");
+            let mut inst = region
+                .new_instance(module)
+                .expect("instance can be created");
+
+            match inst.run("entrypoint", &[]) {
+                Err(Error::RuntimeTerminated(term)) => {
+                    assert_eq!(
+                        *term
+                            .provided_details()
+                            .expect("user provided termination reason")
+                            .downcast_ref::<&'static str>()
+                            .expect("error was static str"),
+                        ERROR_MESSAGE
+                    );
+                }
+                res => panic!("unexpected result: {:?}", res),
+            }
+
+            assert!(NESTED_OUTER.is_poisoned());
+            assert!(NESTED_INNER.is_poisoned());
         }
 
         #[test]
