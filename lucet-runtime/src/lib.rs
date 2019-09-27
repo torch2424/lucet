@@ -80,6 +80,7 @@
 //! to make a `u32` available to hostcalls:
 //!
 //! ```no_run
+//! # #![feature(unwind_attributes)]
 //! use lucet_runtime::{DlModule, Limits, MmapRegion, Region, lucet_hostcall};
 //! use lucet_runtime::vmctx::{Vmctx, lucet_vmctx};
 //!
@@ -195,6 +196,7 @@
 //! and yield it when appropriate.
 //!
 //! ```no_run
+//! # #![feature(unwind_attributes)]
 //! use lucet_runtime::lucet_hostcall;
 //! use lucet_runtime::vmctx::Vmctx;
 //!
@@ -331,6 +333,7 @@
 //! that, for example, a `SIGSEGV` on a non-Lucet thread of a host program will still likely abort
 //! the entire process.
 
+#![feature(unwind_attributes)]
 #![deny(bare_trait_objects)]
 
 // This makes `lucet_runtime` in the expansion of `#[lucet_hostcall]` resolve to something

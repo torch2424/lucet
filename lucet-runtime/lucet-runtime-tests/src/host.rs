@@ -314,9 +314,7 @@ macro_rules! host_tests {
         }
 
         /// Ensures that callee-saved registers are properly restored following a `catch_unwind`
-        /// that catches a panic. Currently disabled because it relies on UB until
-        /// `#[unwind(allowed)]` is stabilized.
-        #[ignore]
+        /// that catches a panic.
         #[test]
         fn restore_callee_saved() {
             let module =
