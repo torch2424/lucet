@@ -259,6 +259,28 @@ extern "C" fn handle_signal(signum: c_int, siginfo_ptr: *mut siginfo_t, ucontext
         if switch_to_host {
             // we must disable termination so no KillSwitch may fire in host code.
             inst.kill_state.disable_termination();
+
+            // use the ucontext to fill in the fields of the guest context; we can't use
+            // `Context::swap()` here because then we'd swap back to the signal handler instead of
+            // the point in the guest that caused the fault
+            ctx.save_to_context(&mut inst.ctx);
+
+            // set up the faulting instruction pointer as the return address for `initiate_unwind`;
+            // extremely unsafe, doesn't handle any edge cases yet
+            let stack_offset =
+                inst.ctx.gpr.rsp as usize - dbg!(inst.alloc.slot().stack) as usize;
+            let stack_index = stack_offset / 8;
+            assert!(stack_offset % 8 == 0);
+
+            let stack = unsafe { inst.alloc.stack_u64_mut() };
+            if stack_index % 2 == 1 {
+                stack[stack_index - 1] = rip as u64;
+                inst.ctx.gpr.rsp -= 8;
+            } else {
+                stack[stack_index - 1] = 0xAFAFAFAFAFAFAFAF;
+                stack[stack_index - 2] = rip as u64;
+                inst.ctx.gpr.rsp -= 16;
+            }
         }
 
         switch_to_host

@@ -31,6 +31,7 @@ macro_rules! host_tests {
             static ref NESTED_INNER: Mutex<()> = Mutex::new(());
             static ref NESTED_REGS_OUTER: Mutex<()> = Mutex::new(());
             static ref NESTED_REGS_INNER: Mutex<()> = Mutex::new(());
+            static ref FAULT_UNWIND: Mutex<()> = Mutex::new(());
         }
 
         #[inline]
@@ -329,6 +330,19 @@ macro_rules! host_tests {
             );
         }
 
+        /// Ensures that hostcall stack frames get unwound when a fault occurs in guest code.
+        #[test]
+        fn fault_unwind() {
+            let module = test_module_c("host", "fault_unwind.c").expect("build and load module");
+            let region = TestRegion::create(1, &Limits::default()).expect("region can be created");
+            let mut inst = region
+                .new_instance(module)
+                .expect("instance can be created");
+            inst.run("entrypoint", &[]).unwrap_err();
+            inst.reset().unwrap();
+            assert!(FAULT_UNWIND.is_poisoned());
+        }
+
         #[test]
         fn run_fpe() {
             let module = test_module_c("host", "fpe.c").expect("build and load module");
@@ -345,31 +359,6 @@ macro_rules! host_tests {
                     panic!("unexpected result: {:?}", res);
                 }
             }
-        }
-
-        #[test]
-        fn run_hostcall_print_host_rsp() {
-            extern "C" {
-                fn hostcall_print_host_rsp(vmctx: *mut lucet_vmctx);
-            }
-
-            unsafe extern "C" fn f(vmctx: *mut lucet_vmctx) {
-                hostcall_print_host_rsp(vmctx);
-            }
-
-            let module = MockModuleBuilder::new()
-                .with_export_func(MockExportBuilder::new(
-                    "f",
-                    FunctionPointer::from_usize(f as usize),
-                ))
-                .build();
-
-            let region = TestRegion::create(1, &Limits::default()).expect("region can be created");
-            let mut inst = region
-                .new_instance(module)
-                .expect("instance can be created");
-
-            inst.run("f", &[]).unwrap();
         }
 
         #[test]
