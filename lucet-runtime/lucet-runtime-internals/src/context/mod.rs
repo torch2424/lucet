@@ -729,4 +729,8 @@ extern "C" {
     /// Takes the guest return address as an argument as a consequence of implementation details,
     /// see `Instance::swap_and_return` for more.
     pub(crate) fn lucet_context_activate();
+
+    /// Just a stub to have a single address we can unwind through, for stack alignment when we
+    /// need to add a new call frame to an existing guest
+    pub(crate) fn unwind_stub();
 }
