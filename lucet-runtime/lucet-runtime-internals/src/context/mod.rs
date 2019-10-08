@@ -125,6 +125,7 @@ pub struct Context {
     backstop_callback: *const unsafe extern "C" fn(*mut Instance),
     backstop_data: *mut Instance,
     sigset: signal::SigSet,
+    pub(crate) stop_addr: Option<u64>,
 }
 
 impl Context {
@@ -139,6 +140,7 @@ impl Context {
             backstop_callback: Context::default_backstop_callback as *const _,
             backstop_data: ptr::null_mut(),
             sigset: signal::SigSet::empty(),
+            stop_addr: None,
         }
     }
 }

@@ -31,7 +31,8 @@ macro_rules! host_tests {
             static ref NESTED_INNER: Mutex<()> = Mutex::new(());
             static ref NESTED_REGS_OUTER: Mutex<()> = Mutex::new(());
             static ref NESTED_REGS_INNER: Mutex<()> = Mutex::new(());
-            static ref FAULT_UNWIND: Mutex<()> = Mutex::new(());
+            static ref BAD_ACCESS_UNWIND: Mutex<()> = Mutex::new(());
+            static ref STACK_OVERFLOW_UNWIND: Mutex<()> = Mutex::new(());
         }
 
         #[inline]
@@ -165,6 +166,241 @@ macro_rules! host_tests {
                     vmctx.yield_val_expecting_val(CoopFactsK::Mult(n, n_rec))
                 };
                 vmctx.yield_val(CoopFactsK::Result(result));
+                result
+            }
+            fact(vmctx, n)
+        }
+
+        #[lucet_hostcall]
+        #[allow(unreachable_code)]
+        #[no_mangle]
+        pub unsafe extern "C" fn hostcall_test_func_hostcall_error_unwind(
+            &mut vmctx,
+        ) -> () {
+            let lock = HOSTCALL_MUTEX.lock().unwrap();
+            unsafe {
+                lucet_hostcall_terminate!(ERROR_MESSAGE);
+            }
+            drop(lock);
+        }
+
+        #[lucet_hostcall]
+        #[no_mangle]
+        pub unsafe extern "C" fn nested_error_unwind_outer(
+            &mut vmctx,
+            cb_idx: u32,
+        ) -> u64 {
+            unwind_outer(vmctx, &*NESTED_OUTER, cb_idx)
+        }
+
+        #[lucet_hostcall]
+        #[no_mangle]
+        pub unsafe extern "C" fn nested_error_unwind_inner(
+            &mut vmctx,
+        ) -> () {
+            unwind_inner(vmctx, &*NESTED_INNER)
+        }
+
+        #[lucet_hostcall]
+        #[no_mangle]
+        pub unsafe extern "C" fn nested_error_unwind_regs_outer(
+            &mut vmctx,
+            cb_idx: u32,
+        ) -> u64 {
+            unwind_outer(vmctx, &*NESTED_REGS_OUTER, cb_idx)
+        }
+
+        #[lucet_hostcall]
+        #[no_mangle]
+        pub unsafe extern "C" fn nested_error_unwind_regs_inner(
+            &mut vmctx,
+        ) -> () {
+            unwind_inner(vmctx, &*NESTED_REGS_INNER)
+        }
+
+        #[lucet_hostcall]
+        #[no_mangle]
+        pub unsafe extern "C" fn hostcall_panic(
+            &mut _vmctx,
+        ) -> () {
+            panic!("hostcall_panic");
+        }
+
+        #[lucet_hostcall]
+        #[no_mangle]
+        pub unsafe extern "C" fn hostcall_restore_callee_saved(
+            &mut vmctx,
+            cb_idx: u32,
+        ) -> u64 {
+            let mut a: u64;
+            let mut b: u64 = 0xAAAAAAAA00000001;
+            let mut c: u64 = 0xAAAAAAAA00000002;
+            let mut d: u64 = 0xAAAAAAAA00000003;
+            let mut e: u64 = 0xAAAAAAAA00000004;
+            let mut f: u64 = 0xAAAAAAAA00000005;
+            let mut g: u64 = 0xAAAAAAAA00000006;
+            let mut h: u64 = 0xAAAAAAAA00000007;
+            let mut i: u64 = 0xAAAAAAAA00000008;
+            let mut j: u64 = 0xAAAAAAAA00000009;
+            let mut k: u64 = 0xAAAAAAAA0000000A;
+            let mut l: u64 = 0xAAAAAAAA0000000B;
+
+            a = b.wrapping_add(c ^ 0);
+            b = c.wrapping_add(d ^ 1);
+            c = d.wrapping_add(e ^ 2);
+            d = e.wrapping_add(f ^ 3);
+            e = f.wrapping_add(g ^ 4);
+            f = g.wrapping_add(h ^ 5);
+            g = h.wrapping_add(i ^ 6);
+            h = i.wrapping_add(j ^ 7);
+            i = j.wrapping_add(k ^ 8);
+            j = k.wrapping_add(l ^ 9);
+            k = l.wrapping_add(a ^ 10);
+            l = a.wrapping_add(b ^ 11);
+
+            let func = vmctx
+                .get_func_from_idx(0, cb_idx)
+                .expect("can get function by index");
+            let func = std::mem::transmute::<usize, extern "C" fn(*mut lucet_vmctx) -> u64>(
+                func.ptr.as_usize(),
+            );
+            let vmctx_raw = vmctx.as_raw();
+            let res = std::panic::catch_unwind(|| {
+                (func)(vmctx_raw);
+            });
+            assert!(res.is_err());
+
+            a = b.wrapping_mul(c & 0);
+            b = c.wrapping_mul(d & 1);
+            c = d.wrapping_mul(e & 2);
+            d = e.wrapping_mul(f & 3);
+            e = f.wrapping_mul(g & 4);
+            f = g.wrapping_mul(h & 5);
+            g = h.wrapping_mul(i & 6);
+            h = i.wrapping_mul(j & 7);
+            i = j.wrapping_mul(k & 8);
+            j = k.wrapping_mul(l & 9);
+            k = l.wrapping_mul(a & 10);
+            l = a.wrapping_mul(b & 11);
+
+            a ^ b ^ c ^ d ^ e ^ f ^ g ^ h ^ i ^ j ^ k ^ l
+        }
+
+        #[lucet_hostcall]
+        #[no_mangle]
+        pub unsafe extern "C" fn hostcall_stack_overflow_unwind(
+            &mut vmctx,
+            cb_idx: u32,
+        ) -> () {
+            let lock = STACK_OVERFLOW_UNWIND.lock().unwrap();
+
+            let func = vmctx
+                .get_func_from_idx(0, cb_idx)
+                .expect("can get function by index");
+            let func = std::mem::transmute::<usize, extern "C" fn(*mut lucet_vmctx)>(
+                func.ptr.as_usize(),
+            );
+            let vmctx_raw = vmctx.as_raw();
+            func(vmctx_raw);
+
+            drop(lock);
+        }
+
+        #[lucet_hostcall]
+        #[no_mangle]
+        pub unsafe extern "C" fn hostcall_bad_access_unwind(
+            &mut vmctx,
+            cb_idx: u32,
+        ) -> () {
+            let lock = BAD_ACCESS_UNWIND.lock().unwrap();
+
+            let func = vmctx
+                .get_func_from_idx(0, cb_idx)
+                .expect("can get function by index");
+            let func = std::mem::transmute::<usize, extern "C" fn(*mut lucet_vmctx)>(
+                func.ptr.as_usize(),
+            );
+            let vmctx_raw = vmctx.as_raw();
+            func(vmctx_raw);
+
+            drop(lock);
+        }
+
+        #[lucet_hostcall]
+        #[no_mangle]
+        pub unsafe extern "C" fn hostcall_bad_borrow(
+            &mut vmctx,
+        ) -> bool {
+            let heap = vmctx.heap();
+            let mut other_heap = vmctx.heap_mut();
+            heap[0] == other_heap[0]
+        }
+
+        #[lucet_hostcall]
+        #[no_mangle]
+        pub unsafe extern "C" fn hostcall_missing_embed_ctx(
+            &mut vmctx,
+        ) -> bool {
+            struct S {
+                x: bool
+            }
+            let ctx = vmctx.get_embed_ctx::<S>();
+            ctx.x
+        }
+
+        #[lucet_hostcall]
+        #[no_mangle]
+        pub unsafe extern "C" fn hostcall_multiple_vmctx(
+            &mut vmctx,
+        ) -> bool {
+            let mut vmctx1 = Vmctx::from_raw(vmctx.as_raw());
+            vmctx1.heap_mut()[0] = 0xAF;
+            drop(vmctx1);
+
+            let mut vmctx2 = Vmctx::from_raw(vmctx.as_raw());
+            let res = vmctx2.heap()[0] == 0xAF;
+            drop(vmctx2);
+
+            res
+        }
+
+        #[lucet_hostcall]
+        #[no_mangle]
+        pub unsafe extern "C" fn hostcall_yields(
+            &mut vmctx,
+        ) -> () {
+            vmctx.yield_();
+        }
+
+        #[lucet_hostcall]
+        #[no_mangle]
+        pub unsafe extern "C" fn hostcall_yield_expects_5(
+            &mut vmctx,
+        ) -> u64 {
+            vmctx.yield_expecting_val()
+        }
+
+        #[lucet_hostcall]
+        #[no_mangle]
+        pub unsafe extern "C" fn hostcall_yields_5(
+            &mut vmctx,
+        ) -> () {
+            vmctx.yield_val(5u64);
+        }
+
+        #[lucet_hostcall]
+        #[no_mangle]
+        pub unsafe extern "C" fn hostcall_yield_facts(
+            &mut vmctx,
+            n: u64,
+        ) -> u64 {
+            fn fact(vmctx: &mut Vmctx, n: u64) -> u64 {
+                let result = if n <= 1 {
+                    1
+                } else {
+                    n * fact(vmctx, n - 1)
+                };
+                vmctx.yield_val(result);
                 result
             }
             fact(vmctx, n)
@@ -332,15 +568,29 @@ macro_rules! host_tests {
 
         /// Ensures that hostcall stack frames get unwound when a fault occurs in guest code.
         #[test]
-        fn fault_unwind() {
+        fn bad_access_unwind() {
             let module = test_module_c("host", "fault_unwind.c").expect("build and load module");
             let region = TestRegion::create(1, &Limits::default()).expect("region can be created");
             let mut inst = region
                 .new_instance(module)
                 .expect("instance can be created");
-            inst.run("entrypoint", &[]).unwrap_err();
+            inst.run("bad_access", &[]).unwrap_err();
             inst.reset().unwrap();
-            assert!(FAULT_UNWIND.is_poisoned());
+            assert!(BAD_ACCESS_UNWIND.is_poisoned());
+        }
+
+        /// Ensures that hostcall stack frames get unwound even when a stack overflow occurs in
+        /// guest code.
+        #[test]
+        fn stack_overflow_unwind() {
+            let module = test_module_c("host", "fault_unwind.c").expect("build and load module");
+            let region = TestRegion::create(1, &Limits::default()).expect("region can be created");
+            let mut inst = region
+                .new_instance(module)
+                .expect("instance can be created");
+            inst.run("stack_overflow", &[]).unwrap_err();
+            inst.reset().unwrap();
+            assert!(STACK_OVERFLOW_UNWIND.is_poisoned());
         }
 
         #[test]

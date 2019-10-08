@@ -52,6 +52,10 @@ pub trait RegionInternal: Send + Sync {
     fn reset_heap(&self, alloc: &mut Alloc, module: &dyn Module) -> Result<(), Error>;
 
     fn as_dyn_internal(&self) -> &dyn RegionInternal;
+
+    fn enable_stack_redzone(&self, slot: &Slot);
+
+    fn disable_stack_redzone(&self, slot: &Slot);
 }
 
 /// A trait for regions that are created with a fixed capacity and limits.
