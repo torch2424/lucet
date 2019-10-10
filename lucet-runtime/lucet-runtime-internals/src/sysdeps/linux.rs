@@ -76,7 +76,7 @@ impl UContext {
         }
     }
 
-    pub fn as_ptr(&mut self) -> UContextPtr {
+    pub fn as_ptr(&self) -> UContextPtr {
         UContextPtr::new(&self.context as *const _ as *const _)
     }
 }
