@@ -126,7 +126,7 @@ impl ObjectFile {
             path.as_ref()
         ));
         let file = File::create(path)?;
-        self.artifact.write(file)?;
+        self.artifact.write(file).unwrap();
         Ok(())
     }
 }
@@ -204,7 +204,8 @@ pub(crate) fn write_relocated_slice(
                 },
                 absolute_reloc,
             )
-            .context(format!("linking {} into function manifest", to))?;
+                .unwrap();
+//            .context(format!("linking {} into function manifest", to))?;
         }
         (Some(to), _len) => {
             // This is a local buffer of known size
@@ -213,7 +214,8 @@ pub(crate) fn write_relocated_slice(
                 to,   // is a reference to `to`    (eg. fn_name)
                 at: buf.position(),
             })
-            .context(format!("linking {} into function manifest", to))?;
+            .unwrap();
+//            .context(format!("linking {} into function manifest", to))?;
         }
         (None, len) => {
             // There's actually no relocation to add, because there's no slice to put here.

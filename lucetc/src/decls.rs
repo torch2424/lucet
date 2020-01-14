@@ -12,7 +12,7 @@ use cranelift_codegen::isa::TargetFrontendConfig;
 use cranelift_module::{Backend as ClifBackend, Linkage, Module as ClifModule};
 use cranelift_wasm::{
     Global, GlobalIndex, GlobalInit, MemoryIndex, ModuleEnvironment, SignatureIndex, Table,
-    TableIndex,
+    TableIndex, TargetEnvironment,
 };
 use failure::{format_err, Error, ResultExt};
 use lucet_module::bindings::Bindings;
@@ -321,6 +321,9 @@ impl<'a> ModuleDecls<'a> {
             let g_decl = info.globals.get(ix).unwrap();
 
             let global = match g_decl.entity.initializer {
+                GlobalInit::RefNullConst => {
+                    panic!("ha");
+                }
                 GlobalInit::I32Const(i) => Ok(GlobalVariant::Def(GlobalDef::I32(i))),
                 GlobalInit::I64Const(i) => Ok(GlobalVariant::Def(GlobalDef::I64(i))),
                 GlobalInit::F32Const(f) => {

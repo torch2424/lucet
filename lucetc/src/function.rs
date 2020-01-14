@@ -9,7 +9,7 @@ use cranelift_codegen::isa::TargetFrontendConfig;
 use cranelift_frontend::FunctionBuilder;
 use cranelift_wasm::{
     FuncEnvironment, FuncIndex, FuncTranslationState, GlobalIndex, GlobalVariable, MemoryIndex,
-    SignatureIndex, TableIndex, WasmError, WasmResult,
+    SignatureIndex, TableIndex, TargetEnvironment, WasmError, WasmResult,
 };
 use lucet_module::InstanceRuntimeData;
 use memoffset::offset_of;
@@ -269,9 +269,48 @@ impl<'a> FuncInfo<'a> {
     }
 }
 
-impl<'a> FuncEnvironment for FuncInfo<'a> {
+impl<'a> TargetEnvironment for FuncInfo<'a> {
     fn target_config(&self) -> TargetFrontendConfig {
         self.module_decls.target_config()
+    }
+}
+
+use cranelift_codegen::ir::{Function, Heap, Table, Value};
+impl<'a> FuncEnvironment for FuncInfo<'a> {
+    fn is_wasm_parameter(&self, f: &Function, u: usize) -> bool {
+        false
+    }
+
+    fn translate_memory_copy(&mut self, cursor: FuncCursor, idx: MemoryIndex, heap: Heap, value: Value, v2: Value, v3: Value) -> Result<(), WasmError> {
+        unimplemented!("ha ha");
+    }
+
+    fn translate_memory_fill(&mut self, cursor: FuncCursor, idx: MemoryIndex, heap: Heap, value: Value, v2: Value, v3: Value) -> Result<(), WasmError> {
+        unimplemented!("ha ha");
+    }
+
+    fn translate_memory_init(&mut self, cursor: FuncCursor, idx: MemoryIndex, heap: Heap, u: u32, value: Value, v2: Value, v3: Value) -> Result<(), WasmError> {
+        unimplemented!("ha ha");
+    }
+
+    fn translate_data_drop(&mut self, cursor: FuncCursor, u: u32) -> Result<(), WasmError> {
+        unimplemented!("ha ha");
+    }
+
+    fn translate_table_init(&mut self, cursor: FuncCursor, u: u32, idx: TableIndex, table: Table, v1: Value, v2: Value, v3: Value) -> Result<(), WasmError> {
+        unimplemented!("ha ha");
+    }
+
+    fn translate_table_size(&mut self, cursor: FuncCursor, idx: TableIndex, table: Table) -> Result<Value, WasmError> {
+        unimplemented!("ha ha");
+    }
+
+    fn translate_table_copy(&mut self, cursor: FuncCursor, idx: TableIndex, table: Table, idx2: TableIndex, tbl2: Table, v1: Value, v2: Value, v3: Value) -> Result<(), WasmError> {
+        unimplemented!("ha ha");
+    }
+
+    fn translate_elem_drop(&mut self, cursor: FuncCursor, u: u32) -> Result<(), WasmError> {
+        unimplemented!("ha ha");
     }
 
     fn make_global(

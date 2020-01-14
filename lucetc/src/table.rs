@@ -60,7 +60,8 @@ pub fn link_tables(tables: &[Name], obj: &mut Artifact) -> Result<(), Error> {
             to: table.symbol(),
             at: (TABLE_REF_SIZE * idx) as u64,
         })
-        .context(LucetcErrorKind::Table)?;
+        .unwrap();
+//        .context(LucetcErrorKind::Table)?;
     }
     Ok(())
 }
