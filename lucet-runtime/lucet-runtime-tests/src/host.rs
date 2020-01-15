@@ -79,17 +79,6 @@ macro_rules! host_tests {
         }
 
         #[lucet_hostcall]
-        #[allow(unreachable_code)]
-        #[no_mangle]
-        pub fn hostcall_test_func_hostcall_error_unwind(_vmctx: &mut Vmctx) {
-            let _lock = HOSTCALL_MUTEX.lock().unwrap();
-            unsafe {
-                lucet_hostcall_terminate!(ERROR_MESSAGE);
-            }
-            drop(_lock);
-        }
-
-        #[lucet_hostcall]
         #[no_mangle]
         pub fn hostcall_bad_borrow(vmctx: &mut Vmctx) -> bool {
             let heap = vmctx.heap();
@@ -175,7 +164,7 @@ macro_rules! host_tests {
         #[allow(unreachable_code)]
         #[no_mangle]
         pub unsafe extern "C" fn hostcall_test_func_hostcall_error_unwind(
-            &mut vmctx,
+            vmctx: &mut Vmctx,
         ) -> () {
             let lock = HOSTCALL_MUTEX.lock().unwrap();
             unsafe {
@@ -187,7 +176,7 @@ macro_rules! host_tests {
         #[lucet_hostcall]
         #[no_mangle]
         pub unsafe extern "C" fn nested_error_unwind_outer(
-            &mut vmctx,
+            vmctx: &mut Vmctx,
             cb_idx: u32,
         ) -> u64 {
             unwind_outer(vmctx, &*NESTED_OUTER, cb_idx)
@@ -196,7 +185,7 @@ macro_rules! host_tests {
         #[lucet_hostcall]
         #[no_mangle]
         pub unsafe extern "C" fn nested_error_unwind_inner(
-            &mut vmctx,
+            vmctx: &mut Vmctx,
         ) -> () {
             unwind_inner(vmctx, &*NESTED_INNER)
         }
@@ -204,7 +193,7 @@ macro_rules! host_tests {
         #[lucet_hostcall]
         #[no_mangle]
         pub unsafe extern "C" fn nested_error_unwind_regs_outer(
-            &mut vmctx,
+            vmctx: &mut Vmctx,
             cb_idx: u32,
         ) -> u64 {
             unwind_outer(vmctx, &*NESTED_REGS_OUTER, cb_idx)
@@ -213,7 +202,7 @@ macro_rules! host_tests {
         #[lucet_hostcall]
         #[no_mangle]
         pub unsafe extern "C" fn nested_error_unwind_regs_inner(
-            &mut vmctx,
+            vmctx: &mut Vmctx,
         ) -> () {
             unwind_inner(vmctx, &*NESTED_REGS_INNER)
         }
@@ -221,7 +210,7 @@ macro_rules! host_tests {
         #[lucet_hostcall]
         #[no_mangle]
         pub unsafe extern "C" fn hostcall_panic(
-            &mut _vmctx,
+            _vmctx: &mut Vmctx,
         ) -> () {
             panic!("hostcall_panic");
         }
@@ -229,7 +218,7 @@ macro_rules! host_tests {
         #[lucet_hostcall]
         #[no_mangle]
         pub unsafe extern "C" fn hostcall_restore_callee_saved(
-            &mut vmctx,
+            vmctx: &mut Vmctx,
             cb_idx: u32,
         ) -> u64 {
             let mut a: u64;
@@ -289,7 +278,7 @@ macro_rules! host_tests {
         #[lucet_hostcall]
         #[no_mangle]
         pub unsafe extern "C" fn hostcall_stack_overflow_unwind(
-            &mut vmctx,
+            vmctx: &mut Vmctx,
             cb_idx: u32,
         ) -> () {
             let lock = STACK_OVERFLOW_UNWIND.lock().unwrap();
@@ -309,7 +298,7 @@ macro_rules! host_tests {
         #[lucet_hostcall]
         #[no_mangle]
         pub unsafe extern "C" fn hostcall_bad_access_unwind(
-            &mut vmctx,
+            vmctx: &mut Vmctx,
             cb_idx: u32,
         ) -> () {
             let lock = BAD_ACCESS_UNWIND.lock().unwrap();
@@ -324,86 +313,6 @@ macro_rules! host_tests {
             func(vmctx_raw);
 
             drop(lock);
-        }
-
-        #[lucet_hostcall]
-        #[no_mangle]
-        pub unsafe extern "C" fn hostcall_bad_borrow(
-            &mut vmctx,
-        ) -> bool {
-            let heap = vmctx.heap();
-            let mut other_heap = vmctx.heap_mut();
-            heap[0] == other_heap[0]
-        }
-
-        #[lucet_hostcall]
-        #[no_mangle]
-        pub unsafe extern "C" fn hostcall_missing_embed_ctx(
-            &mut vmctx,
-        ) -> bool {
-            struct S {
-                x: bool
-            }
-            let ctx = vmctx.get_embed_ctx::<S>();
-            ctx.x
-        }
-
-        #[lucet_hostcall]
-        #[no_mangle]
-        pub unsafe extern "C" fn hostcall_multiple_vmctx(
-            &mut vmctx,
-        ) -> bool {
-            let mut vmctx1 = Vmctx::from_raw(vmctx.as_raw());
-            vmctx1.heap_mut()[0] = 0xAF;
-            drop(vmctx1);
-
-            let mut vmctx2 = Vmctx::from_raw(vmctx.as_raw());
-            let res = vmctx2.heap()[0] == 0xAF;
-            drop(vmctx2);
-
-            res
-        }
-
-        #[lucet_hostcall]
-        #[no_mangle]
-        pub unsafe extern "C" fn hostcall_yields(
-            &mut vmctx,
-        ) -> () {
-            vmctx.yield_();
-        }
-
-        #[lucet_hostcall]
-        #[no_mangle]
-        pub unsafe extern "C" fn hostcall_yield_expects_5(
-            &mut vmctx,
-        ) -> u64 {
-            vmctx.yield_expecting_val()
-        }
-
-        #[lucet_hostcall]
-        #[no_mangle]
-        pub unsafe extern "C" fn hostcall_yields_5(
-            &mut vmctx,
-        ) -> () {
-            vmctx.yield_val(5u64);
-        }
-
-        #[lucet_hostcall]
-        #[no_mangle]
-        pub unsafe extern "C" fn hostcall_yield_facts(
-            &mut vmctx,
-            n: u64,
-        ) -> u64 {
-            fn fact(vmctx: &mut Vmctx, n: u64) -> u64 {
-                let result = if n <= 1 {
-                    1
-                } else {
-                    n * fact(vmctx, n - 1)
-                };
-                vmctx.yield_val(result);
-                result
-            }
-            fact(vmctx, n)
         }
 
         #[test]
