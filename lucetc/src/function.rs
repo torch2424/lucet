@@ -278,7 +278,8 @@ impl<'a> TargetEnvironment for FuncInfo<'a> {
 use cranelift_codegen::ir::{Function, Heap, Table, Value};
 impl<'a> FuncEnvironment for FuncInfo<'a> {
     fn is_wasm_parameter(&self, f: &Function, u: usize) -> bool {
-        false
+        use cranelift_codegen::ir::ArgumentPurpose;
+        f.signature.params.get(u).expect("parameter index is valid").purpose == ArgumentPurpose::Normal
     }
 
     fn translate_memory_copy(&mut self, cursor: FuncCursor, idx: MemoryIndex, heap: Heap, value: Value, v2: Value, v3: Value) -> Result<(), WasmError> {

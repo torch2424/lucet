@@ -470,7 +470,7 @@ macro_rules! host_tests {
                 .new_instance(module)
                 .expect("instance can be created");
             assert_eq!(
-                u64::from(inst.run("entrypoint_restore", &[]).unwrap()),
+                u64::from(inst.run("entrypoint_restore", &[]).unwrap().returned().unwrap()),
                 6148914668330025056
             );
         }
