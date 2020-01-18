@@ -403,7 +403,13 @@ macro_rules! host_tests {
 
         /// Check that if two segments of hostcall stack are present when terminating, that they
         /// both get properly unwound.
+        ///
+        /// Currently ignored as we don't allow nested hostcalls - the nested hostcall runs afoul
+        /// of timeouts' domain-checking logic, which assumes beginning a hostscall will only
+        /// happen from a guest context, but when initiated from a nested hostcall is actually a
+        /// hostcall context
         #[test]
+        #[ignore]
         fn nested_error_unwind() {
             let module =
                 test_module_c("host", "nested_error_unwind.c").expect("build and load module");
@@ -432,7 +438,13 @@ macro_rules! host_tests {
 
         /// Like `nested_error_unwind`, but the guest code callback in between the two segments of
         /// hostcall stack uses enough locals to require saving callee registers.
+        ///
+        /// Currently ignored as we don't allow nested hostcalls - the nested hostcall runs afoul
+        /// of timeouts' domain-checking logic, which assumes beginning a hostscall will only
+        /// happen from a guest context, but when initiated from a nested hostcall is actually a
+        /// hostcall context
         #[test]
+        #[ignore]
         fn nested_error_unwind_regs() {
             let module =
                 test_module_c("host", "nested_error_unwind.c").expect("build and load module");
@@ -461,7 +473,13 @@ macro_rules! host_tests {
 
         /// Ensures that callee-saved registers are properly restored following a `catch_unwind`
         /// that catches a panic.
+        ///
+        /// Currently ignored as we don't allow nested hostcalls - the nested hostcall runs afoul
+        /// of timeouts' domain-checking logic, which assumes beginning a hostscall will only
+        /// happen from a guest context, but when initiated from a nested hostcall is actually a
+        /// hostcall context
         #[test]
+        #[ignore]
         fn restore_callee_saved() {
             let module =
                 test_module_c("host", "nested_error_unwind.c").expect("build and load module");

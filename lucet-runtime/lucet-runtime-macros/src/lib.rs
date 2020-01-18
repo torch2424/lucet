@@ -84,12 +84,6 @@ pub fn lucet_hostcall(_attr: TokenStream, item: TokenStream) -> TokenStream {
         })
         .collect::<Vec<_>>();
 
-    let termination_details = if in_internals {
-        quote! { lucet_runtime_internals::instance::TerminationDetails }
-    } else {
-        quote! { lucet_runtime::TerminationDetails }
-    };
-
     let raw_hostcall = quote! {
         #(#attrs)*
         #vis
@@ -99,20 +93,10 @@ pub fn lucet_hostcall(_attr: TokenStream, item: TokenStream) -> TokenStream {
 
             let mut vmctx = #vmctx_mod::Vmctx::from_raw(vmctx_raw);
             #vmctx_mod::VmctxInternal::instance_mut(&mut vmctx).uninterruptable(|| {
-                let res = std::panic::catch_unwind(move || {
+                let mut vmctx = #vmctx_mod::Vmctx::from_raw(vmctx_raw);
+                #vmctx_mod::VmctxInternal::instance_mut(&mut vmctx).in_hostcall(|| {
                     #hostcall_ident(&mut #vmctx_mod::Vmctx::from_raw(vmctx_raw), #(#impl_args),*)
-                });
-                match res {
-                    Ok(res) => res,
-                    Err(e) => {
-                        match e.downcast::<#termination_details>() {
-                            Ok(details) => {
-                                #vmctx_mod::Vmctx::from_raw(vmctx_raw).terminate_no_unwind(*details)
-                            },
-                            Err(e) => std::panic::resume_unwind(e),
-                        }
-                    }
-                }
+                })
             })
         }
     };
