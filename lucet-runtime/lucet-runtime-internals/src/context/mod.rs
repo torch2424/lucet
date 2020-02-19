@@ -628,10 +628,12 @@ impl Context {
     ///
     /// TODO: the return type of this function should really be `Result<!, nix::Error>`, but using
     /// `!` as a type like that is currently experimental.
-    #[inline]
-    pub unsafe fn set_from_signal(to: &Context) -> Result<(), nix::Error> {
-        signal::pthread_sigmask(signal::SigmaskHow::SIG_SETMASK, Some(&to.sigset), None)?;
-        Context::set(to)
+    pub unsafe extern "C" fn set_from_signal() -> Result<(), nix::Error> {
+        crate::instance::HOST_CTX.with(|host_ctx| {
+            let to = &*host_ctx.get();
+            signal::pthread_sigmask(signal::SigmaskHow::SIG_SETMASK, Some(&to.sigset), None)?;
+            Context::set(to)
+        })
     }
 
     /// Clear (zero) return values.

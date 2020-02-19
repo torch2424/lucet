@@ -2,7 +2,6 @@ use crate::context::Context;
 use crate::error::Error;
 use crate::instance::{
     siginfo_ext::SiginfoExt, FaultDetails, Instance, State, TerminationDetails, CURRENT_INSTANCE,
-    HOST_CTX,
 };
 use crate::sysdeps::UContextPtr;
 use lazy_static::lazy_static;
@@ -140,6 +139,7 @@ extern "C" fn handle_signal(signum: c_int, siginfo_ptr: *mut siginfo_t, ucontext
     assert!(!ucontext_ptr.is_null(), "ucontext_ptr must not be null");
     let ctx = UContextPtr::new(ucontext_ptr);
     let rip = ctx.get_ip();
+    println!("faulted at {:#x}", rip as u64);
 
     let switch_to_host = CURRENT_INSTANCE.with(|current_instance| {
         let mut current_instance = current_instance.borrow_mut();
@@ -255,11 +255,8 @@ extern "C" fn handle_signal(signum: c_int, siginfo_ptr: *mut siginfo_t, ucontext
     });
 
     if switch_to_host {
-        HOST_CTX.with(|host_ctx| unsafe {
-            Context::set_from_signal(&*host_ctx.get())
-                .expect("can successfully switch back to the host context");
-        });
-        unreachable!()
+        println!("gonna return to {:#x}", Context::set_from_signal as u64);
+        ctx.set_ip(Context::set_from_signal as *const c_void);
     }
 }
 

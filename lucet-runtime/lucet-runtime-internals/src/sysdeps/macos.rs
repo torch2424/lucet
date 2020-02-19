@@ -136,6 +136,12 @@ impl UContextPtr {
         let mcontext = &unsafe { *(*self.0).uc_mcontext };
         mcontext.ss.rip as *const _
     }
+
+    #[inline]
+    pub fn set_ip(self, new_ip: *const c_void) {
+        let mcontext = &unsafe { *(self.0) }.uc_mcontext;
+        mcontext.ss.rip = new_ip as i64;
+    }
 }
 
 #[derive(Clone, Copy)]
