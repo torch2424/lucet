@@ -33,11 +33,7 @@ impl UContext {
     #[inline]
     pub fn new(ptr: *mut c_void) -> Self {
         UContext {
-            context: unsafe {
-                (ptr as *mut ucontext_t)
-                    .as_mut()
-                    .expect("non-null context")
-            },
+            context: unsafe { (ptr as *mut ucontext_t).as_mut().expect("non-null context") },
         }
     }
 
@@ -49,8 +45,6 @@ impl UContext {
 impl Into<UContext> for UContextPtr {
     #[inline]
     fn into(self) -> UContext {
-        UContext {
-            context: self.0,
-        }
+        UContext { context: self.0 }
     }
 }
