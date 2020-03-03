@@ -9,4 +9,7 @@
 	url = https://github.com/fastly/sightglass
 [submodule "wasi"]
 	path = wasi
-	url = https://github.com/webassembly/wasi
+    url = https://github.com/webassembly/wasi
+[submodule "benchmarks/quickjs-benchmark/quickjs-wasi"]
+    path = benchmarks/quickjs-benchmark/quickjs-wasi
+    url = https://github.com/dip-proto/quickjs-wasi
