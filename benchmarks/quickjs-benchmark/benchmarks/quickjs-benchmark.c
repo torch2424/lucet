@@ -1,4 +1,4 @@
-#include "./quickjs-wasi/quickjs-libc.h"
+#include "../quickjs-wasi/quickjs-libc.h"
 #include <sightglass.h>
 
 // Set up runtime and context

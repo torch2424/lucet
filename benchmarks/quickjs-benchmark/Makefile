@@ -13,7 +13,7 @@ SIGHTGLASS:=$(LUCET_ROOT)/sightglass
 
 LIBBUILTINS:=$(LUCET_ROOT)/lucet-builtins/build/libbuiltins.so
 
-QUICKJS:=$(LUCET_ROOT)/benchmarks/quickjs-benchmark
+QUICKJS:=$(LUCET_ROOT)/benchmarks/quickjs-benchmark/benchmarks
 QUICKJS_SRCS:=$(shell ls $(QUICKJS)/*.c)
 QUICKJS_NATIVE_OBJS:=
 QUICKJS_LUCET_OBJS:=
@@ -66,7 +66,7 @@ build/lucet/module.wasm.unoptimized: $(patsubst %.c, %.o, $(addprefix build/luce
 build/lucet/module.wasm: build/lucet/module.wasm.unoptimized
 	$(WASM_OPT) -mvp --disable-mutable-globals -O4 -o $@ $^
 
-# Don't emit the shared object, we need a saparate link step below.
+# Don't emit the shared object, we need a separate link step below.
 build/lucet/module.o: build/lucet/module.wasm $(LIBBUILTINS)
 	@mkdir -p $(@D)
 	$(LUCETC) $(LUCETC_FLAGS) --emit=obj \
