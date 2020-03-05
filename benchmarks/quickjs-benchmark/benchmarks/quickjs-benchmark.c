@@ -3,7 +3,7 @@
 
 // Set up runtime and context
 JSRuntime *rt;
-JSContext *ctx;
+JSContext *ctx_;
 
 
 void hello_world_setup(void *global_ctx, void **ctx_p) {
@@ -11,27 +11,26 @@ void hello_world_setup(void *global_ctx, void **ctx_p) {
     (void) ctx_p;
 
     rt = JS_NewRuntime();
-    ctx = JS_NewContextRaw(rt);
-    JS_AddIntrinsicBaseObjects(ctx);
-    JS_AddIntrinsicDate(ctx);
-    JS_AddIntrinsicStringNormalize(ctx);
-    JS_AddIntrinsicRegExp(ctx);
-    JS_AddIntrinsicJSON(ctx);
-    JS_AddIntrinsicMapSet(ctx);
-    JS_AddIntrinsicTypedArrays(ctx);
-    JS_AddIntrinsicPromise(ctx);
+    ctx_ = JS_NewContextRaw(rt);
+    JS_AddIntrinsicBaseObjects(ctx_);
+    JS_AddIntrinsicDate(ctx_);
+    JS_AddIntrinsicStringNormalize(ctx_);
+    JS_AddIntrinsicRegExp(ctx_);
+    JS_AddIntrinsicJSON(ctx_);
+    JS_AddIntrinsicMapSet(ctx_);
+    JS_AddIntrinsicTypedArrays(ctx_);
+    JS_AddIntrinsicPromise(ctx_);
 }
 
 int hello_world_body(void *ctx) {
     (void) ctx;
     char hello_world[] = "console.log('Hello World');";
-    JS_Eval(ctx, hello_world, sizeof(hello_world), "/dev/stdout", JS_EVAL_TYPE_GLOBAL);
+    JS_Eval(ctx_, hello_world, sizeof(hello_world), "/dev/stdout", JS_EVAL_TYPE_GLOBAL);
 }
 
-void hello_world_teardown(void *ctx)
-{
+void hello_world_teardown(void *ctx) {
     (void) ctx;
-    JS_FreeContext(ctx);
+    JS_FreeContext(ctx_);
     JS_FreeRuntime(rt);
 }
 

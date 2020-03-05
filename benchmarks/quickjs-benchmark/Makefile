@@ -1,5 +1,10 @@
 LUCET_ROOT:=$(abspath ../..)
 
+# Compiling for Native
+CROSS_PREFIX=/usr/lib/llvm-9/bin/
+CC=$(CROSS_PREFIX)clang
+
+# Compiling for Wasm
 WASI_SDK?=/opt/wasi-sdk
 WASI_CC?=$(WASI_SDK)/bin/clang
 BINARYEN_DIR?=/opt/binaryen
@@ -17,6 +22,12 @@ QUICKJS:=$(LUCET_ROOT)/benchmarks/quickjs-benchmark/benchmarks
 QUICKJS_SRCS:=$(shell ls $(QUICKJS)/*.c)
 QUICKJS_NATIVE_OBJS:=
 QUICKJS_LUCET_OBJS:=
+
+# Linking shenanigans
+OBJDIR=quickjs-wasi/.obj
+QJS_LIB_OBJS=$(OBJDIR)/quickjs.o $(OBJDIR)/libregexp.o $(OBJDIR)/libunicode.o $(OBJDIR)/cutils.o $(OBJDIR)/quickjs-libc.o
+NATIVE_LIBQUICKJS_ARCHIVE:=native-libquickjs-symbols/libquickjs.a
+WASM_LIBQUICKJS_ARCHIVE:=wasm-libquickjs-symbols/libquickjs.a
 
 LUCETC_FLAGS:=--opt-level speed_and_size --min-reserved-size 4294967296
 COMMON_CFLAGS:=--std=c99 -Ofast -Wall -W -I$(SIGHTGLASS)/include
@@ -49,8 +60,9 @@ build: $(LUCET_ROOT)/target/release/sightglass
 
 build/native/quickjs/%.o: $(QUICKJS)/%.c
 	@mkdir -p $(@D)
-	$(CC) $(QUICKJS_NATIVE_CFLAGS) $(COMMON_CFLAGS) -c $^ -o $@
+	$(CC) $(COMMON_CFLAGS) -fPIC -c $^ -o $@
 
+build/native/implementation.so: $(NATIVE_LIBQUICKJS_ARCHIVE)
 build/native/implementation.so: $(patsubst %.c, %.o, $(addprefix build/native/quickjs/, $(notdir $(QUICKJS_SRCS))))
 	@mkdir -p $(@D)
 	$(CC) -shared -o $@ $^
@@ -61,7 +73,7 @@ build/lucet/quickjs/%.o: $(QUICKJS)/%.c
 
 build/lucet/module.wasm.unoptimized: $(patsubst %.c, %.o, $(addprefix build/lucet/quickjs/, $(notdir $(QUICKJS_SRCS))))
 	@mkdir -p $(@D)
-	$(WASI_CC) $^ -o $@ -nostartfiles -Wl,--no-entry -Wl,--export-all
+	$(WASI_CC) $^ -o $@ $(WASM_LIBQUICKJS_ARCHIVE) -nostartfiles -Wl,--no-entry -Wl,--export-all
 
 build/lucet/module.wasm: build/lucet/module.wasm.unoptimized
 	$(WASM_OPT) -mvp --disable-mutable-globals -O4 -o $@ $^

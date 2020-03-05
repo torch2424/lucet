@@ -8,6 +8,8 @@
 #include "sightglass.h"
 #include "wrapper.h"
 
+#include "./quickjs-wasi/quickjs-libc.h"
+
 #define xstr(x) str(x)
 #define str(x) #x
 
