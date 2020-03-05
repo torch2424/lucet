@@ -2,47 +2,41 @@
 #include <sightglass.h>
 
 
-int hello_world_body(void *runtime_ctx) {
+int hello_world_body(void *ctx) {
     printf("\n");
     printf("Hello!\n");
 
-    (void) runtime_ctx;
+    (void) ctx;
 
     // Setup
-    //rt = JS_NewRuntime();
-    // ctx_ = JS_NewContext(rt);
     // https://github.com/everettjf/quickjs-cpp/blob/4df0334050917223b2a9b80dc2cfe399c7eaf8ab/LICENSE
-    JSRuntime *rt;
-    JSContext *ctx;
-    rt = JS_NewRuntime();
-    if (!rt) {
+    JSRuntime *js_rt;
+    JSContext *js_ctx;
+    js_rt = JS_NewRuntime();
+    if (!js_rt) {
         fprintf(stderr, "qjs: cannot allocate JS runtime\n");
-        exit(2);
+        return 1;
     }
-    ctx = JS_NewContext(rt);
-    if (!ctx) {
+    js_ctx = JS_NewContext(js_rt);
+    if (!js_ctx) {
         fprintf(stderr, "qjs: cannot allocate JS context\n");
-        exit(2);
+        return 1;
     }
-    JS_SetModuleLoaderFunc(rt, NULL, js_module_loader, NULL);
-    js_std_add_helpers(ctx, 0, NULL);
-    /* system modules */
-    js_init_module_std(ctx, "std");
-    js_init_module_os(ctx, "os");
+    JS_SetModuleLoaderFunc(js_rt, NULL, js_module_loader, NULL);
+    js_std_add_helpers(js_ctx, 0, NULL);
 
     // Run our JS
-    char js[] = "console.log('Hello From QuickJs!')";
-    int res;
-    JSValue response = JS_Eval(ctx, js, sizeof(js), "<input>", 0);
+    char js_code[] = "console.log('Hello From QuickJs!')";
+    JSValue response = JS_Eval(js_ctx, js_code, sizeof(js_code), "<input>", JS_EVAL_TYPE_GLOBAL);
     if (JS_IsException(response)) {
         printf("JS Exception!\n");
-        //return 1;
+        return 1;
     }
 
     // Free the runtime
-    js_std_free_handlers(rt);
-    JS_FreeContext(ctx);
-    JS_FreeRuntime(rt);
+    js_std_free_handlers(js_rt);
+    JS_FreeContext(js_ctx);
+    JS_FreeRuntime(js_rt);
     printf("\n");
 }
 
