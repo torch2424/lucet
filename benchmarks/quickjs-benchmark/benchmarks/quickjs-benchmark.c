@@ -1,61 +1,51 @@
 #include "../quickjs-wasi/quickjs-libc.h"
 #include <sightglass.h>
 
-// Set up runtime and context
-JSRuntime *rt;
-JSContext *ctx_;
 
+int hello_world_body(void *runtime_ctx) {
+    printf("\n");
+    printf("Hello!\n");
 
-void hello_world_setup(void *global_ctx, void **ctx_p) {
-    (void) global_ctx;
-    (void) ctx_p;
+    (void) runtime_ctx;
 
+    // Setup
+    //rt = JS_NewRuntime();
+    // ctx_ = JS_NewContext(rt);
+    // https://github.com/everettjf/quickjs-cpp/blob/4df0334050917223b2a9b80dc2cfe399c7eaf8ab/LICENSE
+    JSRuntime *rt;
+    JSContext *ctx;
     rt = JS_NewRuntime();
-    ctx_ = JS_NewContextRaw(rt);
-    JS_AddIntrinsicBaseObjects(ctx_);
-    JS_AddIntrinsicDate(ctx_);
-    JS_AddIntrinsicStringNormalize(ctx_);
-    JS_AddIntrinsicRegExp(ctx_);
-    JS_AddIntrinsicJSON(ctx_);
-    JS_AddIntrinsicMapSet(ctx_);
-    JS_AddIntrinsicTypedArrays(ctx_);
-    JS_AddIntrinsicPromise(ctx_);
-}
+    if (!rt) {
+        fprintf(stderr, "qjs: cannot allocate JS runtime\n");
+        exit(2);
+    }
+    ctx = JS_NewContext(rt);
+    if (!ctx) {
+        fprintf(stderr, "qjs: cannot allocate JS context\n");
+        exit(2);
+    }
+    JS_SetModuleLoaderFunc(rt, NULL, js_module_loader, NULL);
+    js_std_add_helpers(ctx, 0, NULL);
+    /* system modules */
+    js_init_module_std(ctx, "std");
+    js_init_module_os(ctx, "os");
 
-int hello_world_body(void *ctx) {
-    (void) ctx;
-    char hello_world[] = "console.log('Hello World');";
-    JS_Eval(ctx_, hello_world, sizeof(hello_world), "/dev/stdout", JS_EVAL_TYPE_GLOBAL);
-}
+    // Run our JS
+    char js[] = "console.log('Hello From QuickJs!')";
+    int res;
+    JSValue response = JS_Eval(ctx, js, sizeof(js), "<input>", 0);
+    if (JS_IsException(response)) {
+        printf("JS Exception!\n");
+        //return 1;
+    }
 
-void hello_world_teardown(void *ctx) {
-    (void) ctx;
-    JS_FreeContext(ctx_);
+    // Free the runtime
+    js_std_free_handlers(rt);
+    JS_FreeContext(ctx);
     JS_FreeRuntime(rt);
+    printf("\n");
 }
 
-/*
-int main(int argc, char **argv) {
-  rt = JS_NewRuntime();
-  ctx = JS_NewContextRaw(rt);
-  JS_AddIntrinsicBaseObjects(ctx);
-  JS_AddIntrinsicDate(ctx);
-  JS_AddIntrinsicStringNormalize(ctx);
-  JS_AddIntrinsicRegExp(ctx);
-  JS_AddIntrinsicJSON(ctx);
-  JS_AddIntrinsicMapSet(ctx);
-  JS_AddIntrinsicTypedArrays(ctx);
-  JS_AddIntrinsicPromise(ctx);
-
-  js_std_add_helpers(ctx, argc, argv);
-  js_std_eval_binary(ctx, qjsc_test, qjsc_test_size, 0);
-  js_std_loop(ctx);
-
-  JS_FreeContext(ctx);
-  JS_FreeRuntime(rt);
-  return 0;
-}
-*/
 
 extern TestsConfig tests_config;
 

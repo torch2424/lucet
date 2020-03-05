@@ -115,7 +115,8 @@ static void teardown_wrapper(const char *name, void *ctx)
         LUCET_TEARDOWN;             \
     }
 
-SETUP(hello_world)
+
+SETUP_NOWRAP(hello_world)
 BODY(hello_world)
 TEARDOWN_NOWRAP(hello_world)
 
