@@ -18,14 +18,10 @@ SIGHTGLASS:=$(LUCET_ROOT)/sightglass
 
 LIBBUILTINS:=$(LUCET_ROOT)/lucet-builtins/build/libbuiltins.so
 
-QUICKJS:=$(LUCET_ROOT)/benchmarks/quickjs-benchmark/benchmarks
-QUICKJS_SRCS:=$(shell ls $(QUICKJS)/*.c)
+QUICKJS_BENCHMARKS:=$(LUCET_ROOT)/benchmarks/quickjs-benchmark/benchmarks
+QUICKJS_BENCHMARKS_SRCS:=$(shell ls $(QUICKJS_BENCHMARKS)/*.c)
 QUICKJS_NATIVE_OBJS:=
 QUICKJS_LUCET_OBJS:=
-
-# Linking shenanigans
-OBJDIR=quickjs-wasi/.obj
-QJS_LIB_OBJS=$(OBJDIR)/quickjs.o $(OBJDIR)/libregexp.o $(OBJDIR)/libunicode.o $(OBJDIR)/cutils.o $(OBJDIR)/quickjs-libc.o
 NATIVE_LIBQUICKJS_ARCHIVE:=native-libquickjs-symbols/libquickjs.a
 WASM_LIBQUICKJS_ARCHIVE:=wasm-libquickjs-symbols/libquickjs.a
 
@@ -58,20 +54,20 @@ build: build/lucet/implementation.so
 build: build/lucet/module.so
 build: $(LUCET_ROOT)/target/release/sightglass
 
-build/native/quickjs/%.o: $(QUICKJS)/%.c
+build/native/quickjs/%.o: $(QUICKJS_BENCHMARKS)/%.c
 	@mkdir -p $(@D)
 	$(CC) $(COMMON_CFLAGS) -fPIC -c $^ -o $@
 
 build/native/implementation.so: $(NATIVE_LIBQUICKJS_ARCHIVE)
-build/native/implementation.so: $(patsubst %.c, %.o, $(addprefix build/native/quickjs/, $(notdir $(QUICKJS_SRCS))))
+build/native/implementation.so: $(patsubst %.c, %.o, $(addprefix build/native/quickjs/, $(notdir $(QUICKJS_BENCHMARKS_SRCS))))
 	@mkdir -p $(@D)
 	$(CC) -shared -o $@ $^
 
-build/lucet/quickjs/%.o: $(QUICKJS)/%.c
+build/lucet/quickjs/%.o: $(QUICKJS_BENCHMARKS)/%.c
 	@mkdir -p $(@D)
 	$(WASI_CC) $(COMMON_CFLAGS) -c $^ -o $@
 
-build/lucet/module.wasm.unoptimized: $(patsubst %.c, %.o, $(addprefix build/lucet/quickjs/, $(notdir $(QUICKJS_SRCS))))
+build/lucet/module.wasm.unoptimized: $(patsubst %.c, %.o, $(addprefix build/lucet/quickjs/, $(notdir $(QUICKJS_BENCHMARKS_SRCS))))
 	@mkdir -p $(@D)
 	$(WASI_CC) $^ -o $@ $(WASM_LIBQUICKJS_ARCHIVE) -nostartfiles -Wl,--no-entry -Wl,--export-all
 
