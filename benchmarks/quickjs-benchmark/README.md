@@ -1,4 +1,4 @@
-So building this is extremely difficult (for me at least).
+So building this is difficult (for me at least).
 
 1. Clone down this repo, amke sure you have the [quickjs-wasi](https://github.com/dip-proto/quickjs-wasi) repo submodule.
 2. Then, we need the WASM symbol files like (`libquickjs.lto.a`). Install all required dependencies by following [the compiling on linux guide](https://github.com/bytecodealliance/lucet/blob/master/docs/src/Compiling-on-Linux.md#installation-on-any-recent-linux-system-using-the-base-compiler)
