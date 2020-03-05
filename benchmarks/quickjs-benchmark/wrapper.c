@@ -8,8 +8,6 @@
 #include "sightglass.h"
 #include "wrapper.h"
 
-#include "./quickjs-wasi/quickjs-libc.h"
-
 #define xstr(x) str(x)
 #define str(x) #x
 
@@ -86,9 +84,12 @@ static void setup_wrapper(const char *name, void *global_ctx_, void **ctx_p)
 
 static void body_wrapper(const char *name, void *ctx)
 {
+    printf("Body wrapper\n");
+    printf("name %s, lucet_ctx.inst %d, *ctx %d\n", name, lucet_ctx.inst, ctx);
     lucet_instance_run(lucet_ctx.inst, name, 1,
                        (struct lucet_val[]){ LUCET_VAL_GUEST_PTR((guest_ptr_t)(uintptr_t) ctx) },
                        NULL);
+    printf("Body Wrapper End\n");
 }
 
 #define BODY(NAME) \

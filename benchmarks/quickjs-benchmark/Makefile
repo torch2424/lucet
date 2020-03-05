@@ -56,7 +56,7 @@ build: $(LUCET_ROOT)/target/release/sightglass
 
 build/native/quickjs/%.o: $(QUICKJS_BENCHMARKS)/%.c
 	@mkdir -p $(@D)
-	$(CC) $(COMMON_CFLAGS) -fPIC -c $^ -o $@
+	$(CC) $(QUICKJS_NATIVE_CFLAGS) $(COMMON_CFLAGS) -fPIC -c $^ -o $@
 
 build/native/implementation.so: $(NATIVE_LIBQUICKJS_ARCHIVE)
 build/native/implementation.so: $(patsubst %.c, %.o, $(addprefix build/native/quickjs/, $(notdir $(QUICKJS_BENCHMARKS_SRCS))))
